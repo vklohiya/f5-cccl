@@ -74,9 +74,7 @@ class FDBTunnel(Resource):
         return super(FDBTunnel, self).__hash__()
 
     def _uri_path(self, bigip):
-        t = bigip.tm.net.fdb.tunnels.tunnel
-        t.raw["_meta_data"]["icontrol_version"] = bigip.tmos_version
-        return t
+        return bigip.tm.net.fdb.tunnels.tunnel
 
 
 class IcrFDBTunnel(FDBTunnel):

@@ -104,9 +104,8 @@ class BigIPProxy(object):
         Args:
             rsc: A BIG-IP resource
         """
-        return True
-        #return rsc.name.startswith(self._prefix) and \
-        #    getattr(rsc, 'appService', None) is None
+        return rsc.name.startswith(self._prefix) and \
+            getattr(rsc, 'appService', None) is None
 
     def get_virtual_address_references(self):
         """The list of virtual addresses to remove from existing config."""
@@ -404,11 +403,8 @@ class BigIPProxy(object):
         # our local list.
         LOGGER.debug(
             "Retrieving fdb tunnels from BIG-IP /%s...", self._partition)
-        # Adding support for latest bigips
-        self._bigip.tm.net.fdb.tunnels.raw['_meta_data']['icontrol_version'] = self._bigip.tmos_version
+
         tunnels = self._bigip.tm.net.fdb.tunnels.get_collection()
-        for t in tunnels:
-            t.raw["_meta_data"]["icontrol_version"] = self._bigip.tmos_version
 
 
         # Refresh the arp cache
@@ -418,23 +414,19 @@ class BigIPProxy(object):
         }
 
         # Refresh the tunnel cache
-        self._fdb_tunnels = {}
-        for t in tunnels:
-            if self._manageable_resource(t) and t.partition == self._partition:
-                self._fdb_tunnels[t.name] = self._create_resource(IcrFDBTunnel, t, default_route_domain)
-            else:
-                LOGGER.info(self._partition)
-                LOGGER.info(self._manageable_resource(t))
-                LOGGER.info(t)
-
-        LOGGER.info(self._fdb_tunnels)
+        self._fdb_tunnels = {
+            t.name: self._create_resource(IcrFDBTunnel, t,
+                                          default_route_domain)
+            for t in tunnels if (self._manageable_resource(t) and
+                                 t.partition == self._partition)
+        }
         self._all_fdb_tunnels = {
             t.name: self._create_resource(IcrFDBTunnel, t,
                                           default_route_domain)
             for t in tunnels if t.partition == self._partition
         }
+        LOGGER.info(self._fdb_tunnels)
         LOGGER.info(self._all_fdb_tunnels)
-
         LOGGER.debug(
             "BIG-IP net refresh took %.5f seconds.", (time() - start_time))
 
